@@ -1,0 +1,35 @@
+import os
+import subprocess
+
+# Chemin vers FeatureExtraction.exe
+openface_path = r"C:\Users\Dell\Desktop\SD\stage\openface\openface\FeatureExtraction.exe"
+
+# Dossier contenant les vidéos
+video_folder = r"C:\Users\Dell\Desktop\SD\stage\video"
+
+# Dossier de sortie des landmarks
+landmarks_folder = r"C:\Users\Dell\Desktop\SD\stage\landmarks"
+
+# Crée le dossier s’il n’existe pas
+if not os.path.exists(landmarks_folder):
+    os.makedirs(landmarks_folder)
+
+# Liste des vidéos .avi
+video_list = [f for f in os.listdir(video_folder) if f.endswith(".avi")]
+
+# Traitement
+for video in video_list:
+    video_path = os.path.join(video_folder, video)
+    cmd = [
+        openface_path,
+        "-f", video_path,
+        "-out_dir", landmarks_folder,
+        "-2Dfp"
+    ]
+    print(f"➡️ Extraction landmarks pour {video}...")
+    try:
+        subprocess.run(cmd, check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Erreur sur {video}: {e}")
+
+print("✅ Extraction terminée.")
