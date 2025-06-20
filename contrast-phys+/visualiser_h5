@@ -1,0 +1,18 @@
+import h5py
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Chemin vers un fichier .h5 généré (ex: vid3.h5)
+h5_path = r"C:\Users\Dell\Desktop\SD\stage\data_h5\vid3.h5"
+
+# Ouvrir le fichier .h5
+with h5py.File(h5_path, 'r') as f:
+    imgs = f['imgs'][:]  # Lire toutes les images [N, 128, 128, 3]
+    print("Forme des données :", imgs.shape)
+
+# Afficher quelques frames pour vérifier
+for i in range(0, min(10, imgs.shape[0]), 2):  # afficher 5 frames sur 10
+    plt.imshow(imgs[i])
+    plt.title(f"Frame {i}")
+    plt.axis('off')
+    plt.show()
