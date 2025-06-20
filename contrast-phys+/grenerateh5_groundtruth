@@ -1,0 +1,74 @@
+import cv2
+import h5py
+import os
+import numpy as np
+
+# Dossiers
+video_dir = r"C:/Users/Dell/Desktop/SD/stage/video"
+ground_truth_map = {
+    "vid.avi": "ground_truth.txt",
+    "vid3.avi": "ground_truth3.txt",
+    "vid4.avi": "ground_truth4.txt",
+    "vid5.avi": "ground_truth5.txt",
+    "vid8.avi": "ground_truth8.txt",
+}
+gt_dir = r"C:/Users/Dell/Desktop/SD/stage/video"
+output_dir = r"C:/Users/Dell/Desktop/SD/stage/data_h5"
+
+# Crée le dossier de sortie s'il n'existe pas
+os.makedirs(output_dir, exist_ok=True)
+
+# Boucle sur chaque vidéo
+for idx, (video_name, gt_file) in enumerate(ground_truth_map.items(), start=1):
+    video_path = os.path.join(video_dir, video_name)
+    gt_path = os.path.join(gt_dir, gt_file)
+
+    print(f"\n📂 Traitement de {video_name}...")
+
+    # Lecture du ground_truth
+    try:
+        bvp = np.loadtxt(gt_path)
+    except Exception as e:
+        print(f"❌ Erreur de lecture du fichier {gt_path} : {e}")
+        continue
+
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        print(f"❌ Impossible d'ouvrir la vidéo {video_path}")
+        continue
+
+    frames = []
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frames.append(frame_rgb)
+
+    cap.release()
+
+    frames = np.array(frames)
+    frame_count = len(frames)
+    bvp_count = len(bvp)
+    print(f"✅ {frame_count} frames extraites")
+    print(f"✅ {bvp_count} valeurs BVP chargées")
+
+    # Synchronisation
+    min_len = min(frame_count, bvp_count)
+    if min_len < 300:
+        print(f"⚠️ Trop court : seulement {min_len} frames. Fichier ignoré.")
+        continue
+
+    frames = frames[:min_len]
+    bvp = bvp[:min_len]
+
+    # Normalisation du BVP
+    bvp = (bvp - np.mean(bvp)) / (np.std(bvp) + 1e-8)
+
+    # Enregistrement du fichier .h5
+    h5_path = os.path.join(output_dir, f"{idx}.h5")
+    with h5py.File(h5_path, "w") as f:
+        f.create_dataset("imgs", data=frames, compression="gzip")
+        f.create_dataset("bvp", data=bvp, compression="gzip")
+
+    print(f"✅ {h5_path} créé avec succès ✅")
